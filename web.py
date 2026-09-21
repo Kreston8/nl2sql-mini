@@ -11,6 +11,18 @@ from app.executor import execute_sql
 
 DB_PATH = "./data/demo.db"
 
+CUSTOM_CSS = """
+<style>
+.gradio-container {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif !important;
+}
+code, pre, .code-wrap, textarea {
+    font-family: "JetBrains Mono", "Fira Code", "Consolas", "Menlo", monospace !important;
+    font-size: 14px !important;
+}
+</style>
+"""
+
 
 def do_query(question):
     """
@@ -21,21 +33,19 @@ def do_query(question):
 
     schema = extract_schema(DB_PATH)
     sql, err = generate_sql(question, schema, DB_PATH)
+
+    # 如果 LLM 报错，把错误信息也当 SQL 内容显示
     if err:
         return err, pd.DataFrame(), f"SQL 生成失败: {err}"
 
     rows, exec_err = execute_sql(sql, DB_PATH)
+
     if exec_err:
-        # 带错误提示重试一次
-        sql, err = generate_sql(question, schema, DB_PATH, error_hint=exec_err)
-        if err:
-            return sql, pd.DataFrame(), f"SQL 重试失败: {err}"
-        rows, exec_err = execute_sql(sql, DB_PATH)
-        if exec_err:
-            return sql, pd.DataFrame(), f"SQL 执行失败: {exec_err}"
+        # 被安全拦截，显示 SQL + 拦截提示
+        return sql, pd.DataFrame(), f"⚠️ {exec_err}"
 
     df = pd.DataFrame(rows) if rows else pd.DataFrame()
-    return sql, df, f"查询成功，共 {len(df)} 行"
+    return sql, df, f"✅ 查询成功，共 {len(df)} 行"
 
 
 examples = [
@@ -48,9 +58,9 @@ examples = [
     ["统计每个月的订单数量"],
 ]
 
-with gr.Blocks(
-    title="Mini NL2SQL",
-) as demo:
+with gr.Blocks(title="Mini NL2SQL") as demo:
+    gr.HTML(CUSTOM_CSS)
+
     gr.Markdown(
         """
         # 🗄️ Mini NL2SQL
