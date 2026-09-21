@@ -33,12 +33,10 @@ def do_query(question):
         if exec_err:
             return f"SQL 执行失败: {exec_err}", None
 
-    # 转成表格格式（列名 + 行数据）
+    # 转成表格格式（Gradio Dataframe 直接支持 list[dict]）
     if rows:
-        cols = list(rows[0].keys())
-        data = [list(r.values()) for r in rows]
-        return sql, (cols, data)
-    return sql, (["无结果"], [[""]])
+        return sql, rows
+    return sql, None
 
 # 构建界面
 with gr.Blocks(title="Mini NL2SQL") as demo:
