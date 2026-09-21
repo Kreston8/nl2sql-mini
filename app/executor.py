@@ -13,6 +13,7 @@ FORBIDDEN_KEYWORDS = [
 def validate_sql(sql: str):
     """
     只读 SQL 安全检查。
+    如果有多条语句，自动截断到第一条。
     """
     normalized = sql.strip().lower()
     if not (normalized.startswith("select") or normalized.startswith("with")):
@@ -22,10 +23,17 @@ def validate_sql(sql: str):
         if kw in normalized:
             raise ValueError(f"检测到禁止操作: {kw.strip()}")
 
-    # 防止多语句
-    sql_wo_semi = sql.rstrip().rstrip(";")
-    if ";" in sql_wo_semi:
-        raise ValueError("不允许执行多条 SQL")
+    # 如果有多条 SQL（分号分隔），只取第一条
+    sql = sql.strip()
+    if ";" in sql:
+        first_stmt = sql.split(";", 1)[0].strip()
+        if not first_stmt.endswith(";"):
+            first_stmt += ";"
+        return first_stmt
+
+    if not sql.endswith(";"):
+        sql += ";"
+    return sql
 
 
 def execute_sql(sql: str, db_path: str):
@@ -34,7 +42,7 @@ def execute_sql(sql: str, db_path: str):
     rows 是 list[dict] 格式。
     """
     try:
-        validate_sql(sql)
+        sql = validate_sql(sql)
     except ValueError as e:
         return None, str(e)
 
