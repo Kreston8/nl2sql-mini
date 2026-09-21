@@ -22,7 +22,7 @@ def do_query(question):
     schema = extract_schema(DB_PATH)
     sql, err = generate_sql(question, schema, DB_PATH)
     if err:
-        return "", pd.DataFrame(), f"SQL 生成失败: {err}"
+        return err, pd.DataFrame(), f"SQL 生成失败: {err}"
 
     rows, exec_err = execute_sql(sql, DB_PATH)
     if exec_err:
