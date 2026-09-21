@@ -61,7 +61,7 @@ with gr.Blocks(
     question = gr.Textbox(
         label="你的问题",
         placeholder="例如：统计每个城市的客户数量",
-        lines=3,
+        lines=1,
     )
 
     submit_btn = gr.Button("生成 SQL 并执行", variant="primary")
