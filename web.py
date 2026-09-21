@@ -4,6 +4,7 @@ Gradio Web 界面 - 5 分钟搞定的可视化操作
 打开浏览器访问: http://localhost:7860
 """
 import gradio as gr
+import pandas as pd
 from app.schema import extract_schema
 from app.sql_gen import generate_sql
 from app.executor import execute_sql
@@ -33,9 +34,10 @@ def do_query(question):
         if exec_err:
             return f"SQL 执行失败: {exec_err}", None
 
-    # 转成表格格式（Gradio Dataframe 直接支持 list[dict]）
+    # 转成 pandas DataFrame（Gradio 渲染最稳定）
     if rows:
-        return sql, rows
+        df = pd.DataFrame(rows)
+        return sql, df
     return sql, None
 
 # 构建界面
