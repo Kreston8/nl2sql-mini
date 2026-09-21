@@ -1,29 +1,52 @@
 """
-SQL 执行模块：在 SQLite 上执行查询 SQL，返回结果
+SQL 执行器：只读执行，带安全校验
 """
 import sqlite3
+import pandas as pd
 
-def execute_sql(sql: str, db_path: str) -> tuple:
-    """
-    执行 SELECT 查询 SQL
-    返回 (rows, error) 元组
-    """
-    # 安全检查：只允许 SELECT
-    sql_upper = sql.strip().upper()
-    if not sql_upper.startswith("SELECT"):
-        return None, "只允许 SELECT 查询语句"
+FORBIDDEN_KEYWORDS = [
+    "insert ", "update ", "delete ", "drop ", "alter ",
+    "create ", "replace ", "attach ", "detach ", "pragma ", "vacuum ",
+]
 
+
+def validate_sql(sql: str):
+    """
+    只读 SQL 安全检查。
+    """
+    normalized = sql.strip().lower()
+    if not (normalized.startswith("select") or normalized.startswith("with")):
+        raise ValueError("只允许执行 SELECT 或 WITH 查询")
+
+    for kw in FORBIDDEN_KEYWORDS:
+        if kw in normalized:
+            raise ValueError(f"检测到禁止操作: {kw.strip()}")
+
+    # 防止多语句
+    sql_wo_semi = sql.rstrip().rstrip(";")
+    if ";" in sql_wo_semi:
+        raise ValueError("不允许执行多条 SQL")
+
+
+def execute_sql(sql: str, db_path: str):
+    """
+    以只读模式执行 SQL，返回 (rows, error)。
+    rows 是 list[dict] 格式。
+    """
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        cols = [desc[0] for desc in cursor.description]
-        conn.close()
+        validate_sql(sql)
+    except ValueError as e:
+        return None, str(e)
 
-        # 转成字典列表方便 JSON 序列化
-        result = [dict(zip(cols, row)) for row in rows]
-        return result, None
-
+    conn = sqlite3.connect(db_path)
+    conn.execute("PRAGMA query_only = ON")  # 只读模式
+    try:
+        df = pd.read_sql_query(sql, conn)
+        if len(df) > 1000:
+            df = df.head(1000)
+        rows = df.to_dict("records")
+        return rows, None
     except Exception as e:
         return None, str(e)
+    finally:
+        conn.close()
