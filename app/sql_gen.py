@@ -20,6 +20,10 @@ PROMPT_TEMPLATE = """你是一个 SQL 生成专家。根据下面的数据库表
 2. SQL 必须兼容 SQLite 语法
 3. 不要生成 DROP/DELETE/UPDATE 等修改数据的语句，只生成 SELECT 查询
 4. 如果问题无法用 SQL 回答，输出: ERROR: 无法回答
+5. 业务规则：
+   - "销售额"/"营收"/"GMV" 等金额相关统计，只统计 status='已完成' 的订单
+   - "销量"/"订单量" 统计所有状态的订单
+   - 如果用户没说，默认金额统计加 WHERE status='已完成'
 
 数据库表结构：
 {schema}
