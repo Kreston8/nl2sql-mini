@@ -57,6 +57,7 @@ with gr.Blocks(title="Mini NL2SQL") as demo:
     result_output = gr.Dataframe(label="📊 查询结果", interactive=False)
 
     btn.click(do_query, inputs=question, outputs=[sql_output, result_output])
+    question.submit(do_query, inputs=question, outputs=[sql_output, result_output])  # Enter 直接提交
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)

@@ -66,6 +66,11 @@ def generate_sql(question: str, schema: str, db_path: str, error_hint: str = Non
             if sql.startswith("ERROR:"):
                 return None, sql
 
+            # 确保 SQL 末尾有分号
+            sql = sql.rstrip()
+            if not sql.endswith(";"):
+                sql += ";"
+
             return sql, None
 
         except Exception as e:
