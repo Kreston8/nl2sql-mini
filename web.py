@@ -47,8 +47,9 @@ with gr.Blocks(title="Mini NL2SQL") as demo:
     with gr.Row():
         question = gr.Textbox(
             label="你的问题",
-            placeholder="例如：天津有多少个用户？\n销售额最高的前 5 个商品是什么？\n每个城市的平均订单金额是多少？",
+            placeholder="例如：天津有多少个用户？",
             scale=4,
+            lines=1,          # 单行模式，按 Enter 直接提交
         )
         btn = gr.Button("查询", variant="primary", scale=1)
 
