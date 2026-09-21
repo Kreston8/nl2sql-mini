@@ -25,23 +25,23 @@ code, pre, .code-wrap, textarea {
 
 
 def do_query(question):
-    """
-    自然语言 -> SQL -> 执行 -> 返回 (SQL, 结果DataFrame, 状态)
-    """
     if not question.strip():
         return "", pd.DataFrame(), "请输入问题"
 
     schema = extract_schema(DB_PATH)
     sql, err = generate_sql(question, schema, DB_PATH)
-
-    # 如果 LLM 报错，把错误信息也当 SQL 内容显示
     if err:
         return err, pd.DataFrame(), f"SQL 生成失败: {err}"
 
     rows, exec_err = execute_sql(sql, DB_PATH)
 
+    # 执行失败，带错误信息重试一次
     if exec_err:
-        # 被安全拦截，显示 SQL + 拦截提示
+        sql, err = generate_sql(question, schema, DB_PATH, error_hint=exec_err)
+        if not err and sql:
+            rows, exec_err = execute_sql(sql, DB_PATH)
+
+    if exec_err:
         return sql, pd.DataFrame(), f"⚠️ {exec_err}"
 
     df = pd.DataFrame(rows) if rows else pd.DataFrame()
