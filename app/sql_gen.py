@@ -63,7 +63,7 @@ def generate_sql(question: str, schema: str, db_path: str, error_hint: str = Non
         error_hint=error_hint or "无",
     )
 
-    for attempt in range(3):
+    for attempt in range(5):
         try:
             resp = client.chat.completions.create(
                 model=MODEL,
@@ -76,11 +76,18 @@ def generate_sql(question: str, schema: str, db_path: str, error_hint: str = Non
             if raw.startswith("ERROR:"):
                 return None, raw
 
+            # 空输出或不是 SELECT 开头，重试
+            if not raw or not re.match(r"^(SELECT|WITH)", raw, re.IGNORECASE):
+                if attempt < 4:
+                    time.sleep(1)
+                    continue
+                return None, "模型返回为空，请重试"
+
             sql = clean_sql(raw)
             return sql, None
 
         except Exception as e:
-            if "429" in str(e) and attempt < 2:
+            if "429" in str(e) and attempt < 4:
                 time.sleep(2)
                 continue
             return None, str(e)
