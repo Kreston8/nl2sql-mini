@@ -129,6 +129,8 @@ if __name__ == "__main__":
                 self.original.write(text)
         def flush(self):
             self.original.flush()
+        def isatty(self):
+            return self.original.isatty()
 
     old_stdout = sys.stdout
     sys.stdout = _FilteredStdout(sys.stdout)
