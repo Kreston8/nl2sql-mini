@@ -69,7 +69,7 @@ def generate_sql(question: str, schema: str, db_path: str, error_hint: str = Non
                 model=MODEL,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1,
-                max_tokens=200,
+                max_tokens=500,
             )
             raw = resp.choices[0].message.content.strip()
 
