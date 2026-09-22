@@ -3,10 +3,11 @@ Gradio Web 界面 - NL2SQL 智能查询
 启动: python3 web.py
 浏览器: http://localhost:7860
 """
+import os
 import gradio as gr
 import pandas as pd
 from app.schema import extract_schema
-from app.sql_gen import generate_sql
+from app.sql_gen import generate_sql, client, MODEL
 from app.executor import execute_sql
 
 DB_PATH = "./data/demo.db"
@@ -22,6 +23,25 @@ code, pre, .code-wrap, textarea {
 }
 </style>
 """
+
+
+def check_model():
+    """启动时检测模型是否可用"""
+    print(f"\n{'='*50}")
+    print(f"  当前模型: {MODEL}")
+    print(f"  API 地址: {os.getenv('LLM_BASE_URL', 'https://open.bigmodel.cn/api/paas/v4')}")
+    try:
+        resp = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": "hi"}],
+            max_tokens=5,
+        )
+        print(f"  模型状态: ✅ 可用")
+    except Exception as e:
+        print(f"  模型状态: ❌ 不可用")
+        print(f"  错误: {str(e)[:100]}")
+        print(f"  请检查 ~/.llm_key 文件中的 API Key 和模型名")
+    print(f"{'='*50}\n")
 
 
 def do_query(question):
@@ -99,4 +119,12 @@ with gr.Blocks(title="Mini NL2SQL") as demo:
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", server_port=7860, theme=gr.themes.Soft())
+    check_model()
+    # share=True 可生成临时公网链接供他人访问，默认关闭
+    # show_tips=False 关闭终端多余提示
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        theme=gr.themes.Soft(),
+        show_tips=False,
+    )
