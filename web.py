@@ -118,8 +118,25 @@ with gr.Blocks(title="Mini NL2SQL") as demo:
 if __name__ == "__main__":
     check_model()
     # share=True 可生成临时公网链接供他人访问，默认关闭
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        theme=gr.themes.Soft(),
-    )
+    import sys
+    import io
+
+    class _FilteredStdout:
+        def __init__(self, original):
+            self.original = original
+        def write(self, text):
+            if "public link" not in text and "share=True" not in text:
+                self.original.write(text)
+        def flush(self):
+            self.original.flush()
+
+    old_stdout = sys.stdout
+    sys.stdout = _FilteredStdout(sys.stdout)
+    try:
+        demo.launch(
+            server_name="0.0.0.0",
+            server_port=7860,
+            theme=gr.themes.Soft(),
+        )
+    finally:
+        sys.stdout = old_stdout
